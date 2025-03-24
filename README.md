@@ -49,8 +49,8 @@ Additionally, **Tailwind CSS** is installed via npm to simplify styling and prov
 ```
 
 ⚡ Features 
-1. Preconfigured Django setup with essential tools.
-2. Tailwind CSS integration for fast and modern UI design.
-3. Code formatting and import sorting tools included.
+- Preconfigured Django setup with essential tools. 
+- Tailwind CSS integration for fast and modern UI design. 
+- Code formatting and import sorting tools included.
 
 Feel free to customize the boilerplate according to your project’s needs. Happy coding! 🚀
