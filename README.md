@@ -28,24 +28,31 @@ Additionally, **Tailwind CSS** is installed via npm to simplify styling and prov
     npm install 
     ```
 
-2. Run the development server:
+2. Migrate database:
     ```bash
-    python manage.py runserver
+    python manage.py makemigration
+    python manage.py migrate
     ```
-
+   
 3. Compile Tailwind CSS:
     ```bash
-    npx tailwindcss -i ./src/input.css -o ./static/css/output.css --watch
+    npx tailwindcss -i ./static/input.css -o ./static/output.css --watch
+    ```
+
+4. Run the development server:
+    ```bash
+    python manage.py runserver
     ```
 
 🌱 Project Structure
 
 ```
-├── manage.py
-├── requirements.txt
-├── app/
+├── core/
 ├── static/
-└── templates/
+├── manage.py
+├── package.json
+├── package-lock.json
+└── requirements.txt
 ```
 
 ⚡ Features 
