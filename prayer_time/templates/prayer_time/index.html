@@ -1,0 +1,220 @@
+{% extends "prayer_time/base.html" %}
+
+{% block content %}
+<div class="max-w-md w-full mx-auto">
+    <div class="text-center mb-8">
+        <h1 class="text-3xl font-bold text-white mb-2">Pengecek Waktu Sholat Maghrib</h1>
+        <p class="text-blue-200">Cek apakah di tempatmu sudah waktunya sholat Maghrib</p>
+    </div>
+
+    <div id="loading" class="text-center">
+        <div class="inline-block animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-white mb-4"></div>
+        <p class="text-white">Sistem sedang mendeteksi lokasimu...</p>
+    </div>
+
+    <div id="content" class="hidden">
+        <div class="prayer-card bg-white rounded-xl shadow-lg overflow-hidden mb-6">
+            <div class="px-6 py-4">
+                <div class="flex items-center justify-between mb-4">
+                    <div>
+                        <h2 class="text-xl font-bold text-gray-800">Lokasimu</h2>
+                        <p id="location" class="text-gray-600">Loading...</p>
+                    </div>
+                    <div class="bg-blue-100 p-3 rounded-full">
+                        <i class="fas fa-map-marker-alt text-blue-500 text-xl"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="prayer-time-card" class="prayer-card bg-gradient-to-br from-blue-600 to-indigo-800 rounded-xl shadow-lg overflow-hidden text-white">
+            <div class="px-6 py-8 text-center">
+                <div class="mb-6">
+                    <i class="fas fa-moon text-yellow-300 text-5xl mb-4"></i>
+                    <h2 class="text-2xl font-bold mb-2">Waktu Sholat Maghrib</h2>
+                    <p id="maghrib-time" class="text-3xl font-bold mb-4">--:--</p>
+                    <p id="time-remaining" class="text-blue-200">Sistem sedang menghitung...</p>
+                </div>
+                
+                <div id="status" class="inline-block px-4 py-2 rounded-full font-semibold">
+                    <span id="status-text">Checking...</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-6 text-center text-blue-200 text-sm">
+            <p>Waktu sholat Maghrib dihitung berdasarkan lokasimu</p>
+            <p class="mt-1" id="calculation-method">Metode perhitungan: --</p>
+        </div>
+    </div>
+
+    <div id="error" class="hidden bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded mb-6">
+        <div class="flex items-center">
+            <div class="flex-shrink-0">
+                <i class="fas fa-exclamation-circle text-red-500"></i>
+            </div>
+            <div class="ml-3">
+                <p id="error-message"></p>
+            </div>
+        </div>
+    </div>
+
+    <div class="mt-8 text-center text-blue-200 text-xs">
+        <p>Made with <i class="fas fa-heart text-red-400"></i> for Muslims worldwide</p>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const loadingElement = document.getElementById('loading');
+        const contentElement = document.getElementById('content');
+        const errorElement = document.getElementById('error');
+        const errorMessageElement = document.getElementById('error-message');
+        const locationElement = document.getElementById('location');
+        const maghribTimeElement = document.getElementById('maghrib-time');
+        const timeRemainingElement = document.getElementById('time-remaining');
+        const statusElement = document.getElementById('status');
+        const statusTextElement = document.getElementById('status-text');
+        const calculationMethodElement = document.getElementById('calculation-method');
+        const prayerTimeCard = document.getElementById('prayer-time-card');
+
+        // Check if geolocation is supported
+        if (!navigator.geolocation) {
+            showError("Geolocation is not supported by your browser. Please enable it or try another browser.");
+            return;
+        }
+
+        // Get user's location
+        navigator.geolocation.getCurrentPosition(
+            async (position) => {
+                const latitude = position.coords.latitude;
+                const longitude = position.coords.longitude;
+                
+                try {
+                    // Get location name
+                    const locationResponse = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`);
+                    const locationData = await locationResponse.json();
+                    
+                    let locationName = '';
+                    if (locationData.city) locationName += locationData.city;
+                    if (locationData.countryName) {
+                        if (locationName) locationName += ', ';
+                        locationName += locationData.countryName;
+                    }
+                    
+                    locationElement.textContent = locationName || 'Lokasimu saat ini';
+                    
+                    // Get prayer times
+                    const today = new Date();
+                    const dateStr = `${today.getDate()}-${today.getMonth() + 1}-${today.getFullYear()}`;
+                    
+                    const prayerResponse = await fetch(`https://api.aladhan.com/v1/timings/${dateStr}?latitude=${latitude}&longitude=${longitude}&method=2`);
+                    const prayerData = await prayerResponse.json();
+                    
+                    if (prayerData.code === 200) {
+                        const timings = prayerData.data.timings;
+                        const method = prayerData.data.meta.method.name;
+                        
+                        calculationMethodElement.textContent = `Metode perhitungan: ${method}`;
+                        
+                        // Display Maghrib time
+                        const maghribTime = timings.Maghrib;
+                        maghribTimeElement.textContent = maghribTime;
+                        
+                        // Check if it's Maghrib time now
+                        checkMaghribTime(maghribTime);
+                        
+                        // Update every minute
+                        setInterval(() => checkMaghribTime(maghribTime), 60000);
+                        
+                        loadingElement.classList.add('hidden');
+                        contentElement.classList.remove('hidden');
+                    } else {
+                        showError("Could not fetch prayer times. Please try again later.");
+                    }
+                } catch (error) {
+                    showError("An error occurred while fetching data. Please try again.");
+                    console.error(error);
+                }
+            },
+            (error) => {
+                let errorMsg = "Could not detect your location. ";
+                switch(error.code) {
+                    case error.PERMISSION_DENIED:
+                        errorMsg += "You denied the request for geolocation.";
+                        break;
+                    case error.POSITION_UNAVAILABLE:
+                        errorMsg += "Location information is unavailable.";
+                        break;
+                    case error.TIMEOUT:
+                        errorMsg += "The request to get your location timed out.";
+                        break;
+                    case error.UNKNOWN_ERROR:
+                        errorMsg += "An unknown error occurred.";
+                        break;
+                }
+                showError(errorMsg);
+            }
+        );
+        
+        function checkMaghribTime(maghribTimeStr) {
+            const now = new Date();
+            const [maghribHour, maghribMinute] = maghribTimeStr.split(':').map(Number);
+            
+            // Create Date objects for comparison
+            const maghribTime = new Date();
+            maghribTime.setHours(maghribHour, maghribMinute, 0, 0);
+            
+            // Calculate time remaining or passed
+            const timeDiff = maghribTime - now;
+            const isMaghribNow = timeDiff > -1800000 && timeDiff <= 1800000; // ±30 minutes window
+            
+            if (isMaghribNow) {
+                statusTextElement.textContent = "It's Maghrib time now!";
+                statusElement.className = "inline-block px-4 py-2 rounded-full font-semibold bg-green-100 text-green-800";
+                prayerTimeCard.classList.add('pulse');
+                
+                if (timeDiff > 0) {
+                    timeRemainingElement.textContent = "Maghrib is starting soon!";
+                } else {
+                    timeRemainingElement.textContent = "Maghrib time is passing...";
+                }
+            } else {
+                prayerTimeCard.classList.remove('pulse');
+                
+                if (timeDiff > 0) {
+                    // Maghrib is in the future
+                    const hours = Math.floor(timeDiff / (1000 * 60 * 60));
+                    const minutes = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
+                    
+                    let remainingText = "Maghrib starts in ";
+                    if (hours > 0) remainingText += `${hours} hour${hours > 1 ? 's' : ''} `;
+                    remainingText += `${minutes} minute${minutes !== 1 ? 's' : ''}`;
+                    
+                    timeRemainingElement.textContent = remainingText;
+                    statusTextElement.textContent = "Not yet Maghrib time";
+                    statusElement.className = "inline-block px-4 py-2 rounded-full font-semibold bg-blue-100 text-blue-800";
+                } else {
+                    // Maghrib has passed
+                    const hours = Math.floor(-timeDiff / (1000 * 60 * 60));
+                    const minutes = Math.floor((-timeDiff % (1000 * 60 * 60)) / (1000 * 60));
+                    
+                    let passedText = "Maghrib was ";
+                    if (hours > 0) passedText += `${hours} hour${hours > 1 ? 's' : ''} `;
+                    passedText += `${minutes} minute${minutes !== 1 ? 's' : ''} ago`;
+                    
+                    timeRemainingElement.textContent = passedText;
+                    statusTextElement.textContent = "Maghrib time has passed";
+                    statusElement.className = "inline-block px-4 py-2 rounded-full font-semibold bg-gray-100 text-gray-800";
+                }
+            }
+        }
+        
+        function showError(message) {
+            loadingElement.classList.add('hidden');
+            errorMessageElement.textContent = message;
+            errorElement.classList.remove('hidden');
+        }
+    });
+</script>
+{% endblock %}
