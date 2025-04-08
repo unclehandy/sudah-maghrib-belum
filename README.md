@@ -1,63 +1,66 @@
-# Django Boilerplate with Tailwind CSS
+# Django Application
 
-This is a Django boilerplate project designed to help you quickly get started with modern web development. It includes a set of essential packages for building and maintaining clean, organized, and efficient Django applications. Additionally, it integrates **Tailwind CSS** (installed via npm) for rapid front-end development.
+This is a Django web application for determining the Maghrib prayer time for a given location.
 
-## 📦 Included Packages
+## Setup and Installation
 
-The following Python packages are pre-installed (as listed in `requirements.txt`):
+### Prerequisites
+- Python 3.8 or higher
+- PostgreSQL
+- Redis
 
-- **asgiref**: Provides ASGI support for asynchronous Django applications.
-- **black**: An opinionated code formatter to keep your code clean and consistent.
-- **click**: A simple and powerful command-line interface creation library.
-- **Django**: The core web framework — version 5.1.7.
-- **isort**: Automatically sorts imports to keep your code organized.
-- **mypy-extensions**: Additional features for static type checking with MyPy.
-- **packaging**: Utilities for dealing with Python package versions.
-- **pathspec**: Used to define file patterns (e.g., for ignoring files).
-- **platformdirs**: Manages platform-specific directories for storing app data.
-- **sqlparse**: A parser for SQL queries, used internally by Django for better query handling.
-- **whitenoise**: Simplifies serving static files in production environments.
+### Installation Steps
 
-Additionally, **Tailwind CSS** is installed via npm to simplify styling and provide utility-first CSS classes out of the box.
+1. Clone the repository
+   ```
+   git clone <repository-url>
+   cd <project-directory>
+   ```
 
-## 🚀 Getting Started
+2. Create and activate a virtual environment
+   ```
+   python -m venv .venv
+   source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+   ```
 
-1. Install dependencies:  
-    ```bash
-    pip install -r requirements.txt
-    npm install 
-    ```
+3. Install dependencies
+   ```
+   pip install -r requirements.txt
+   ```
 
-2. Migrate database:
-    ```bash
-    python manage.py makemigration
-    python manage.py migrate
-    ```
-   
-3. Compile Tailwind CSS:
-    ```bash
-    npx tailwindcss -i ./static/input.css -o ./static/output.css --watch
-    ```
+4. Set up environment variables
+   - Create a `.env` file in the project root with the following variables:
+     ```
+     PG_NAME=postgres
+     PG_USER=postgres
+     PG_PASSWORD=postgres
+     PG_HOST=localhost
+     PG_PORT=5432
+     ```
 
-4. Run the development server:
-    ```bash
-    python manage.py runserver
-    ```
+5. Create docker container for postgresql and redis. For posgresql value should match .env varibale.
 
-🌱 Project Structure
+6. Run migrations
+   ```
+   python manage.py migrate
+   ```
 
-```
-├── core/
-├── static/
-├── manage.py
-├── package.json
-├── package-lock.json
-└── requirements.txt
-```
+7. Start the development server
+   ```
+   python manage.py runserver
+   ```
 
-⚡ Features 
-- Preconfigured Django setup with essential tools. 
-- Tailwind CSS integration for fast and modern UI design. 
-- Code formatting and import sorting tools included.
+## Project Structure
 
-Feel free to customize the boilerplate according to your project’s needs. Happy coding! 🚀
+- `core/` - Main Django project configuration
+- `pamanhandy/` - Django applications for personal blog
+- `prayer_time/` - Django applications for maghrib prayer checker
+- `static/` - Static files (CSS, JS, images)
+
+## Usage
+
+Access the application at http://localhost:8000 after starting the development server.
+
+## License
+
+This project is licensed under the MIT License. 
